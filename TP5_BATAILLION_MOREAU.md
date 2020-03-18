@@ -25,8 +25,12 @@ que les adresses de la première et dernière machine configurées (précisez si
 - Sous-réseau 6 : 172.16.0.96 /26  
 - Sous-réseau 7 : 172.16.0.16 /27
 
-| Aligné à gauche  | Centré          | Aligné à droite |
-| :--------------- |:---------------:| -----:|
-| Aligné à gauche  |   ce texte        |  Aligné à droite |
-| Aligné à gauche  | est             |   Aligné à droite |
-| Aligné à gauche  | centré          |    Aligné à droite |
+| Sous-réseau  | Adresse de sous-réseau | Adresse de broadcast | Première adresse | Dernière Adresse |
+| ------------ |------------------------| -------------------- | -----------------|------------------|
+| 1 | 172.16.1.0 /26 |  Aligné à droite |Aligné à droite |Aligné à droite |
+| 2 | 172.16.1.64 /26 |   Aligné à droite |Aligné à droite |Aligné à droite |
+| 3 | 172.16.1.192 /26 |    Aligné à droite |Aligné à droite |Aligné à droite |
+| 4 | 172.16.1.192 /26 |  Aligné à droite |Aligné à droite |Aligné à droite |
+| 5 | 172.16.0.64 /26 |   Aligné à droite |Aligné à droite |Aligné à droite |
+| 6 | 172.16.0.96 /26 |    Aligné à droite |Aligné à droite |Aligné à droite |
+| 7 | 172.16.0.16 /27 |    Aligné à droite |Aligné à droite |Aligné à droite |
