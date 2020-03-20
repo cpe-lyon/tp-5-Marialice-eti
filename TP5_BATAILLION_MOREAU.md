@@ -134,20 +134,23 @@ Avec `ip a`, on regarde l’ip attribuée à la carte 3, c’est 192.168.100.100
 
 **8. Que contient le fichier /var/lib/dhcp/dhcpd.leases sur le serveur, et qu’affiche la commande dhcp-lease-list?**   
 Dans /var/lib/dhcp/dhcpd.leases sur le serveur : pour chaque adresse ip attribuée, on trouve l’horaire d’attribution, l’horaire de fin de bail, l’adresse mac de la machine du client, et le nom du client.  
-La commande dhcp-lease-list permet d’afficher en tableau les infos du fichier dhcpd.leases. Chaque ligne correspond à un client.
+La commande `dhcp-lease-list` permet d’afficher en tableau les infos du fichier dhcpd.leases. Chaque ligne correspond à un client.
 
 **9. Vérifiez que les deux machines se «voient» via leur adresse IP, à l’aide de la commande ping.**  
-Les ping fonctionnent !!!!!  
+Les ping fonctionnent ! On utilise `ip a` ppour s'assurer de l'adresse du client qui est en attribution dynamique.  
 
-**10. Modifiez la configuration du serveur pour que l’interface réseau du client reçoive l’IP statique 192.168.100.20: 
+**10. Modifiez la configuration du serveur pour que l’interface réseau du client reçoive l’IP statique 192.168.100.20:** 
+```
 deny unknown-clients; #empêche l'attribution d'une adresse IP à une station dont l'adresse MAC est inconnue du serveur  
 host client1{  
 hardware ethernet XX:XX:XX:XX:XX:XX; #remplacer par l'adresse MAC  
 fixed-address 192.168.100.20;  
 }  
-Vérifiez que la nouvelle configuration a bien été appliquée sur le client (éventuellement, désactivez puis réactivez l’interface réseau pour forcer le renouvellement du bail DHCP, ou utilisez la commande dhclient -v).**  
+```
+**Vérifiez que la nouvelle configuration a bien été appliquée sur le client (éventuellement, désactivez puis réactivez l’interface réseau pour forcer le renouvellement du bail DHCP, ou utilisez la commande dhclient -v).**  
 
-Modification du fichier de config du serveur dhcp
+On modifie en conséquence le fichier de config dhcpd.conf.
+On force le renouvellement de l'ip du client avec `dhclient -v`. On vérifie l'attribution de l'ip avec `ip a`.  
 
 
 ## Exercice 4. Donner un accès à Internet au client 
