@@ -31,6 +31,8 @@ que les adresses de la première et dernière machine configurées (précisez si
 
 ## Exercice 2. Préparation de l’environnement  
 
+Le but de cet exercice est de mettre en place virtuellement le hardware : on met en place les cartes réseaux nécécessaires à l'environnement demandé.  
+
 **Dans ce TP nous allons mettre en place un réseau rudimentaire constitué de seulement deux machines : un serveur et un client :**  
 **-  le serveur a une connexion Internet, notamment pour télécharger les paquets nécessaires à l’installation des serveurs, et sert de passerelle au client;**  
 **-  les deux machines appartiennent à un réseau local, tpadmin.local, ayant pour adresse 192.168.100.0/24 (on aurait pu choisir une autre adresse, sauf 192.168.1.0/24 qui est souvent réservé, par exemple par le FAI);**  
@@ -51,7 +53,8 @@ dans client :
 sudo ip link set enp0s3 up //activation de l’interface avec le serveur, ici c’est la carte 3 qui appartient au réseau interne tpadmin.local  
 sudo ip addr add 192.168.100.2/24 dev enp0s3 //attribution de l’ip du client  
 
-quand on fait un ping ça fonctionne !
+Le ping de l'ip du client ou de l'ip du serveur réussit !  
+La mise en place de ces communications est temporaire. Si l'on veut qu'à chaque allumage de VM, client et serveur puissent communiquer, il va falloir passer par un fichier netplan.  
 
 **2. Démarrez le serveur et vérifiez que les interfaces réseau sont bien présentes. A quoi correspond l’interface appelée lo?**  
 
@@ -59,16 +62,28 @@ lo=loopback
 
 
 
-## Exercice 3. Installation du serveur DHCP    
+## Exercice 3. Installation du serveur DHCP  
+
+Le but de cet exercice est de mettre en place un serveur dhcp : ce serveur attribuera des ip d'un réseau défini aux clients qui le demanderont. On va également fixer définitivement l'ip du serveur.  
 
 **Un serveur DHCP permet aux ordinateurs clients d’obtenir automatiquement une configuration réseau (adresse IP, serveur DNS, passerelle par défaut…), pour une durée déterminée. Ainsi, dans notre cas, l’interfaces réseau de client doit être configurée automatiquement par serveur.**  
 
 **1. Sur le serveur, installez le paquet isc-dhcp-server. La commande systemctl status isc-dhcp-server devrait vous indiquer que le serveur n’a pas réussi à démarrer, ce qui est normal puisqu’il n’est pas encore configuré (en particulier, il n’a pas encore d’adresses IP à distribuer).**  
-Installation paquet et serveur non configuré.
+`sudo apt install isc-dhcp-server` pour installer le paquet de mise en place d'un serveur dhcp.  
+La commande `systemctl status isc-dhcp-server` permet de se rendre compte que le seveur ne démarre pas à la demande. Il n'a pas été configuré.  
 
 **2. Un serveur DHCP a besoin d’une IP statique. Attribuez de manière permanente l’adresse IP 192.168.100.1 à l’interface réseau du réseau interne. Vérifiez que la configuration est correcte.**  
-Utilisation de netplan pour mettre en place l’ip du réseau interne.  
-Netplan : il ne faut pas enlever la config de la carte 3 dans serveur :  elle sert à la connexion internet !!!!!
+Le serveur a accès à internet grâce à sa carte réseau NAT (la carte 3).  
+Le serveur a également accès à un réseau interne (tpadmin.local) avec le client grâce à sa carte de réseau interne (carte 8). Dans le fichier /etc/netplan, on fixe l'adresse ip du serveur de manière permanente dans le réseau interne.  
+Il faut rajouter dans le fichier netplan une attribution d'ip statique pour la carte 8:  
+`network : 
+  version : 2 
+   renderer : networkd 
+   ethernets : 
+      enp0s3 : 
+          addresses : 
+              − 10.10.10.2/24`  
+Attention: il ne faut pas enlever la config de la carte 3 dans le netplan du serveur :  elle sert à la connexion internet !  
 
 **3. La configuration du serveur DHCP se fait via le fichier /etc/dhcp/dhcpd.conf. Renommez le fichier existant sous le nom dhcpd.conf.bak puis créez en un nouveau avec les informations suivantes :   
 default-lease-time 120;  
