@@ -91,7 +91,7 @@ network :
 ```
 Attention: il ne faut pas enlever la config de la carte 3 dans le netplan du serveur :  elle sert à la connexion internet !  
 
-**3. La configuration du serveur DHCP se fait via le fichier /etc/dhcp/dhcpd.conf. Renommez le fichier existant sous le nom dhcpd.conf.bak puis créez en un nouveau avec les informations suivantes :   
+**3. La configuration du serveur DHCP se fait via le fichier /etc/dhcp/dhcpd.conf. Renommez le fichier existant sous le nom dhcpd.conf.bak puis créez en un nouveau avec les informations suivantes :**   
 ```
 default-lease-time 120;  
 max-lease-time 600;  
@@ -104,31 +104,33 @@ subnet 192.168.100.0 netmask 255.255.255.0 { #configuration du sous-réseau 192.
   option domain-name-servers 192.168.100.1; #le serveur sert aussi de serveur DNS  
 }  
 ```
-A quoi correspondent les deux premières lignes?  
+**A quoi correspondent les deux premières lignes?  
 Les valeurs indiquées sur ces deux lignes sont faibles, afin que l’on puisse voir constituer quelques logs durant ce TP. Dans un environnement de production, elles sont beaucoup plus élevées!**  
 
-`sudo mv dhcpd.conf dhcpd.conf.bak`
-Le bail du serveur dhcp est le temps accordé par le serveur à l’existence d’une ip pour un client. Le client conserve l’ip attribuée pendant la durée du bail. A l’issu de celle-ci, il peut demander une extension de bail.  
+`sudo mv dhcpd.conf dhcpd.conf.bak` on fait une back-up du fichier de config du serveur dhcp.  
+Sur les 2 premières lignes: on peut lire le bail du serveur dhcp. C'est le temps accordé par le serveur à l’existence d’une ip pour un client. Le client conserve l’ip attribuée pendant la durée du bail. A l’issu de celle-ci, il peut demander une extension de bail.  
 
 **4. Editez le fichier /etc/default/isc-dhcp-server afin de spécifier l’interface sur laquelle le serveur doit écouter.**  
-On rajoute l’interface enp0s8 dans le fichier (c’est celle qui communique avec le client)  
+Le serveur doit écouter les requêtes provenant du client, c'est à dire les requêtes faîtes sur le réseau interne. On rajoute donc l’interface de la carte enp0s8 dans le fichier dans la liste des `INTERFACESv4` (interface avec ipv4).  
 
 **5. Validez votre fichier de configuration avec la commande dhcpd -t puis redémarrez le serveur DHCP (avec la commande systemctl restart isc-dhcp-server) et vérifiez qu’il est actif.**  
-dhcpd -t puis  systemctl restart isc-dhcp-server  
+`dhcpd -t` pour valider le fichier de config du serveur dhcp.   
+`systemctl restart isc-dhcp-server`pour redémarrer le serveur dhcp. A l'issue de ce redémarrage, le serveur est configuré et donc il peut être actif.  
 
 **6. Passons au client. Si vous avez suivi le sujet du TP1, le client a été créé en clonant la machine virtuelle du serveur. Par conséquent, son nom d’hôte est toujours serveur. Nous allons remédier à cela. Pour l’instant, vérifiez que la carte réseau du client est désactivée, puis démarrez le client.  
 Pour modifier le nom de la machine, saisissez la commande hostnamectl set-hostname client.  
 Dans les versions récentes, Ubuntu installe d’oﬀice le paquet cloud-init lors de la configuration du système. Ce paquet permet la configuration de machines via un script dans le cloud, et a parfois des effets de bord fâcheux; en particulier, il supprimera le nom qu’on vient de donner à notre VM au prochain redémarrage pour lui redonner son ancien nom. Pour éviter cela, créez le fichier /etc/cloud/cloud.cfg.d/99_hostname.cfg dans lequel vous ajouterez simplement preserve_hostname: true.**   
 
-hostnamectl set-hostname client
+`hostnamectl set-hostname client`pour renommer la machine en client.  
 
 **7. La commande tail -f /var/log/syslog aﬀiche de manière continue les dernières lignes du fichier de log du système (dès qu’une nouvelle ligne est écrite à la fin du fichier, elle est aﬀichée à l’écran). Lancez cette commande sur le serveur, puis activez la carte réseau du client et observez les logs sur le serveur. Expliquez à quoi correspondent les messages DHCPDISCOVER, DHCPOFFER, DHCPREQUEST, DHCPACK. Vérifiez que le client reçoit bien une adresse IP de la plage spécifiée précédemment.**   
 
-DHCPDISCOVER : requête du client pour découvrir les serveurs dhcp à dispo. S’il n’y en a pas, il s’auto-attribue une ip
-DHCPOFFER : le serveur propose une ip au client
-DHCPREQUEST : le client accepte la propo
-DHCPACK : le serveur confirme la propo et l’attribution
-Avec ip a, on regarde l’ip attribué à la carte 3, c’est 192.168.100.100, c’est-à-dire la première adresse attribuable par le serveur dhcp.
+`tail -f /var/log/syslog` aﬀiche de manière continue les dernières lignes du fichier de log du système. Le journal du système permet de voir les différentes requêtes qui arrivenet et partent du serveur.  
+- DHCPDISCOVER : requête du client pour découvrir les serveurs dhcp à dispo. S’il n’y en a pas, il s’auto-attribue une ip.  
+- DHCPOFFER : le serveur propose une ip du réseau au client.  
+- DHCPREQUEST : le client accepte la proposition.  
+- DHCPACK : le serveur confirme la proposition et l’attribution.  
+Avec `ip a`, on regarde l’ip attribuée à la carte 3, c’est 192.168.100.100, c’est-à-dire la première adresse attribuable par le serveur dhcp.  
 
 **8. Que contient le fichier /var/lib/dhcp/dhcpd.leases sur le serveur, et qu’affiche la commande dhcp-lease-list?**   
 Dans /var/lib/dhcp/dhcpd.leases sur le serveur : pour chaque adresse ip attribuée, on trouve l’horaire d’attribution, l’horaire de fin de bail, l’adresse mac de la machine du client, et le nom du client.  
