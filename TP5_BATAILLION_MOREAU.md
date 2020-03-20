@@ -137,16 +137,27 @@ But : donner au serveur des caractéristiques de routeur : il peut maintenant tr
 Vérifiez à présent que vous arrivez à «pinguer» une adresse IP (par exemple 1.1.1.1 depuis le client. A ce stade, le client a désormais accès à Internet, mais il sera difficile de surfer : par exemple, il est même impossible de pinguer www.google.com. C’est parce que nous n’avons pas encore configuré de serveur DNS pour le client.**  
 But : le serveur est l’unique interface pour internet. Le client est masqué par le serveur. L’ip du client est inconnue d’internet qui ne connait que celle du serveur.  
 
-## Ex 5 :  
+## Exercice 5. Installation du serveur DNS  
 
-1.	sudo apt install bind9
+**De la même façon qu’il est plus facile de retenir le nom d’un contact plutôt que son numéro de téléphone, il est plus simple de mémoriser le nom d’un hôte sur un réseau (par exemple www.cpe.fr) plutôt que son adresse IP (178.237.111.223). 
+Dans les premiers réseaux, cette correspondance, appelée résolution de nom, se faisait via un fichier nommé hosts (présent dans /etc sous Linux1). L’inconvénient de cette méthode est que lorsqu’un nom ou une adresse IP change, il faut modifier les fichiers hosts de toutes les machines!  
+Par conséquent, avec l’avénement des réseaux à grande échelle, ce système n’était plus viable, et une autre solution, automatisée et centralisée cette fois, a été mise au point : DNS (Domain Name Server). Généralement, le serveur DNS utilisé est soit celui mis à disposition par le fournisseur d’accès à Internet, soit un DNS public (comme celui de Google : 8.8.8.8, ou celui de Cloudflare : 1.1.1.1).  
+Il est aussi très commun d’utiliser un serveur DNS privé, interne à l’organisation, afin de pouvoir résoudre les noms des machines locales. Pour les requêtes extérieures, le serveur DNS privé passe alors la main à un DNS externe. Il existe de nombreux serveurs DNS, mais le plus commun sous UNIX est Bind9 (Berkeley Internet Name Daemon v.9).**  
+
+**1. Sur le serveur, commencez par installer Bind9, puis assurez-vous que le service est bien actif.**  
+sudo apt install bind9  
 vérifier activité de bind9 : systemctl status bind9.service
-2.	redémarrer bind9 : sudo service bind9 restart
-3.	ça ping!
-lorsque je tape www.cpe.fr, cela interroge le serveur DNS que j'ai configuré. Ce serveur transmet ensuite la requête au serveur DNS de google situé à l'ip 8.8.8.8. Le serveur DNS de google fait le lien entre le nom cpe et l'adresse ip de cpe. Et ainsi je peux pinger cette ip.
+**2. A ce stade, Bind n’est pas configuré et ne fait donc pas grand chose. L’une des manières les simples de le configurer est d’en faire un serveur cache : il ne fait rien à part mettre en cache les réponses de serveurs externes à qui il transmet la requête de résolution de nom.  
+Le binaire (= programme) installé avec le paquet bind9 ne s’appelle ni bind ni bind9 mais named...  
+Nous allons donc modifier son fichier de configuration : /etc/bind/named.conf.options. Dans ce fichier, décommentez la partie forwarders, et à la place de 0.0.0.0, renseignez les IP de DNS publics comme 1.1.1.1 et 8.8.8.8 (en terminant à chaque fois par un point virgule). Redémarrez le serveur bind9.**  
+redémarrer bind9 : sudo service bind9 restart
 
-4.	On surfe sur Wikipedia grâce à lynx : 
-Le déplacement sur lynx se déroule avec les flèches haut et bas au sein d’une page (on se déplace de lien en lien). Pour suivre un lien hypertexte, on utilise la flèche de droite, pour revenir à la page précédente on utilise la flèche de gauche.
+**3. Sur le client, retentez un ping sur www.google.fr. Cette fois ça devrait marcher! On valide ainsi la configuration du DHCP effectuée précédemment, puisque c’est grâce à elle que le client a trouvé son serveur DNS.**  
+ça ping!  
+lorsque je tape www.cpe.fr, cela interroge le serveur DNS que j'ai configuré. Ce serveur transmet ensuite la requête au serveur DNS de google situé à l'ip 8.8.8.8. Le serveur DNS de google fait le lien entre le nom cpe et l'adresse ip de cpe. Et ainsi je peux pinger cette ip.  
+
+**4. Sur le client, installez le navigateur en mode texte lynx et essayez de surfer sur fr.wikipedia.org (bienvenue dans le passé...)**  On surfe sur Wikipedia grâce à lynx :  
+Le déplacement sur lynx se déroule avec les flèches haut et bas au sein d’une page (on se déplace de lien en lien). Pour suivre un lien hypertexte, on utilise la flèche de droite, pour revenir à la page précédente on utilise la flèche de gauche.  
 
 
 ## Ex 6 :
