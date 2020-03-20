@@ -214,14 +214,14 @@ zone "tpadmin.local" {
 Le champ serial doit être incrémenté à chaque modification du fichier. Généralement, on lui donne pour valeur la date suivie d’un numéro sur deux chiffres, par exemple 2019031401.**  
 
 **3. Maintenant que nous avons configuré notre fichier de zone, il reste à configurer le fichier de zone inverse, qui permet de convertir une adresse IP en nom.  
-Commencez par rajouter les lignes suivantes à la fin du fichier named.conf.local :  
+Commencez par rajouter les lignes suivantes à la fin du fichier named.conf.local :**  
 ```
 zone "100.168.192.in-addr.arpa" { 
 type master; 
 file "/etc/bind/db.192.168.100"; 
 };  
 ```
-Créez ensuite le fichier db.192.168.100 à partir du fichier db.127, et modifiez le de la même manière que le fichier de zone. Sur la dernière ligne, faites correspondre l’adresse IP avec celle du serveur (Attention, il y a un petit piège!).**  
+**Créez ensuite le fichier db.192.168.100 à partir du fichier db.127, et modifiez le de la même manière que le fichier de zone. Sur la dernière ligne, faites correspondre l’adresse IP avec celle du serveur (Attention, il y a un petit piège!).**  
 
 **4. Utilisez les utilitaires named-checkconf et named-checkzone pour valider vos fichiers de configuration:**  
 ```
