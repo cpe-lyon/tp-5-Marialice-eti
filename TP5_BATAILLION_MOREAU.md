@@ -185,7 +185,7 @@ Pour vérifier activité de bind9 : `systemctl status bind9.service`
 Le binaire (= programme) installé avec le paquet bind9 ne s’appelle ni bind ni bind9 mais named...  
 Nous allons donc modifier son fichier de configuration : /etc/bind/named.conf.options. Dans ce fichier, décommentez la partie forwarders, et à la place de 0.0.0.0, renseignez les IP de DNS publics comme 1.1.1.1 et 8.8.8.8 (en terminant à chaque fois par un point virgule). Redémarrez le serveur bind9.**  
 redémarrer bind9 : `sudo service bind9 restart`  
-Le but de cet étape est de donné à notre DNS interne un lien vers des DNS public externes (google et cloudflare). Ce seront eux qui feront le lien entre nom de domaine et ip.  
+Le but de cet étape est de donner à notre DNS interne un lien vers des DNS public externes (google et cloudflare). Ce seront eux qui feront le lien entre nom de domaine et ip.  
 
 **3. Sur le client, retentez un ping sur www.google.fr. Cette fois ça devrait marcher! On valide ainsi la configuration du DHCP effectuée précédemment, puisque c’est grâce à elle que le client a trouvé son serveur DNS.**  
 www.google.fr. ping!  
