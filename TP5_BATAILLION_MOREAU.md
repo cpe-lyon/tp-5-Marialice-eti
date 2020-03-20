@@ -185,18 +185,53 @@ Pour vérifier activité de bind9 : `systemctl status bind9.service`
 Le binaire (= programme) installé avec le paquet bind9 ne s’appelle ni bind ni bind9 mais named...  
 Nous allons donc modifier son fichier de configuration : /etc/bind/named.conf.options. Dans ce fichier, décommentez la partie forwarders, et à la place de 0.0.0.0, renseignez les IP de DNS publics comme 1.1.1.1 et 8.8.8.8 (en terminant à chaque fois par un point virgule). Redémarrez le serveur bind9.**  
 redémarrer bind9 : `sudo service bind9 restart`  
-Le but de cet étape est de donné à notre DNS privé un lien vers des DNS public externes (google et cloudflare). Ce seront eux qui feront le lien entre nom de domaine et ip.  
+Le but de cet étape est de donné à notre DNS interne un lien vers des DNS public externes (google et cloudflare). Ce seront eux qui feront le lien entre nom de domaine et ip.  
 
 **3. Sur le client, retentez un ping sur www.google.fr. Cette fois ça devrait marcher! On valide ainsi la configuration du DHCP effectuée précédemment, puisque c’est grâce à elle que le client a trouvé son serveur DNS.**  
 www.google.fr. ping!  
-Lorsque l'on tape www.cpe.fr, cela interroge le serveur DNS privé bind9 que l'on a configuré. Ce serveur transmet ensuite la requête au serveur DNS de google situé à l'ip 8.8.8.8. Le serveur DNS de google fait le lien entre le nom cpe et l'adresse ip de cpe. Ainsi, on peut pinger ce site.  
+Lorsque l'on tape www.cpe.fr, cela interroge le serveur DNS interne bind9 que l'on a configuré. Ce serveur transmet ensuite la requête au serveur DNS de google situé à l'ip 8.8.8.8. Le serveur DNS de google fait le lien entre le nom cpe et l'adresse ip de cpe. Ainsi, on peut pinger ce site.  
 
 **4. Sur le client, installez le navigateur en mode texte lynx et essayez de surfer sur fr.wikipedia.org (bienvenue dans le passé...)** `sudo apt install lynx` pour installer lynx. Le téléchargement fonctionne car nous sommes maintenant relié à internet.  
 On surfe sur Wikipedia grâce à lynx :  
 Le déplacement sur lynx se déroule avec les flèches haut et bas au sein d’une page (on se déplace de lien en lien). Pour suivre un lien hypertexte, on utilise la flèche de droite, pour revenir à la page précédente on utilise la flèche de gauche.  
 
 
-## Ex 6 :
+## Exercice 6. Configuration du serveur DNS pour la zone tpadmin.local 
+
+**L’intérêt d’un serveur DNS privé est principalement de pouvoir résoudre les noms des machines du réseau local. Pour l’instant, il est impossible de pinguer client depuis serveur et inversement.** 
+
+**1. Modifiez le fichier /etc/bind/named.conf.local et ajoutez les lignes suivantes :**  
+```
+zone "tpadmin.local" { 
+    type master; // c'est un serveur maître 
+    file "/etc/bind/db.tpadmin.local"; // lien vers le fichier de définition de zone 
+}; 
+```
+
+**2. Créez une copie appelée db.tpadmin.local du fichier db.local. Ce fichier est un fichier configuration typique de DNS, constitué d’enregistrements DNS (cf.cours). Commencez par remplacer localhost par tpadmin.local, et l’adresse 127.0.0.1 par l’adresse IP du serveur. 1. On le trouve aussi sous Windows, dans C:\Windows\System32\drivers\etc**  
+
+**La ligne root.tpadmin.local. indique en fait une adresse mail du responsable technique de cette zone, où le symbole @ est remplacé par un point. Attention également à ne pas oublier le point final, qui représente la racine DNS; on ne le met pas dans les navigateurs, mais il est indispensable dans les fichiers de configuration DNS!  
+Le champ serial doit être incrémenté à chaque modification du fichier. Généralement, on lui donne pour valeur la date suivie d’un numéro sur deux chiffres, par exemple 2019031401.**  
+
+**3. Maintenant que nous avons configuré notre fichier de zone, il reste à configurer le fichier de zone inverse, qui permet de convertir une adresse IP en nom.  
+Commencez par rajouter les lignes suivantes à la fin du fichier named.conf.local :  
+```
+zone "100.168.192.in-addr.arpa" { 
+type master; 
+file "/etc/bind/db.192.168.100"; 
+};  
+```
+Créez ensuite le fichier db.192.168.100 à partir du fichier db.127, et modifiez le de la même manière que le fichier de zone. Sur la dernière ligne, faites correspondre l’adresse IP avec celle du serveur (Attention, il y a un petit piège!).**  
+
+**4. Utilisez les utilitaires named-checkconf et named-checkzone pour valider vos fichiers de configuration:**  
+```
+$ named-checkconf named.conf.local 
+$ named-checkzone tpadmin.local /etc/bind/db.tpadmin.local 
+$ named-checkzone 100.168.192.in-addr.arpa /etc/bind/db.192.168.100 
+```
+
+**5. Redémarrer le serveur Bind9. Vous devriez maintenant être en mesure de ”pinguer” les différentes machines du réseau.**
+
 
 
 
