@@ -29,7 +29,7 @@ que les adresses de la première et dernière machine configurées (précisez si
 
 
 
-## Ex 2 :
+## Exercice 2. Préparation de l’environnement  
 
 **Dans ce TP nous allons mettre en place un réseau rudimentaire constitué de seulement deux machines : un serveur et un client :**  
 **-  le serveur a une connexion Internet, notamment pour télécharger les paquets nécessaires à l’installation des serveurs, et sert de passerelle au client;**  
@@ -57,7 +57,9 @@ quand on fait un ping ça fonctionne !
 
 lo=loopback
 
-## Ex 3 :  
+
+
+## Exercice 3. Installation du serveur DHCP    
 
 **Un serveur DHCP permet aux ordinateurs clients d’obtenir automatiquement une configuration réseau (adresse IP, serveur DNS, passerelle par défaut…), pour une durée déterminée. Ainsi, dans notre cas, l’interfaces réseau de client doit être configurée automatiquement par serveur.**  
 
@@ -79,7 +81,7 @@ subnet 192.168.100.0 netmask 255.255.255.0 { #configuration du sous-réseau 192.
   option routers 192.168.100.1; #le serveur sert de passerelle par défaut  
   option domain-name-servers 192.168.100.1; #le serveur sert aussi de serveur DNS  
 }  
-A quoi correspondent les deux premières lignes?   
+A quoi correspondent les deux premières lignes?  
 Les valeurs indiquées sur ces deux lignes sont faibles, afin que l’on puisse voir constituer quelques logs durant ce TP. Dans un environnement de production, elles sont beaucoup plus élevées!**  
 
 sudo mv dhcpd.conf dhcpd.conf.bak
@@ -97,21 +99,43 @@ Dans les versions récentes, Ubuntu installe d’oﬀice le paquet cloud-init lo
 
 hostnamectl set-hostname client
 
-7.	DHCPDISCOVER : requête du client pour découvrir les serveurs dhcp à dispo. S’il n’y en a pas, il s’auto-attribue une ip
+**7. La commande tail -f /var/log/syslog aﬀiche de manière continue les dernières lignes du fichier de log du système (dès qu’une nouvelle ligne est écrite à la fin du fichier, elle est aﬀichée à l’écran). Lancez cette commande sur le serveur, puis activez la carte réseau du client et observez les logs sur le serveur. Expliquez à quoi correspondent les messages DHCPDISCOVER, DHCPOFFER, DHCPREQUEST, DHCPACK. Vérifiez que le client reçoit bien une adresse IP de la plage spécifiée précédemment.**   
+
+DHCPDISCOVER : requête du client pour découvrir les serveurs dhcp à dispo. S’il n’y en a pas, il s’auto-attribue une ip
 DHCPOFFER : le serveur propose une ip au client
- DHCPREQUEST : le client accepte la propo
- DHCPACK : le serveur confirme la propo et l’attribution
+DHCPREQUEST : le client accepte la propo
+DHCPACK : le serveur confirme la propo et l’attribution
 Avec ip a, on regarde l’ip attribué à la carte 3, c’est 192.168.100.100, c’est-à-dire la première adresse attribuable par le serveur dhcp.
 
-8.	Dans /var/lib/dhcp/dhcpd.leases sur le serveur : pour chaque adresse ip attribuée, on trouve l’horaire d’attribution, l’horaire de fin de bail, l’adresse mac de la machine du client, et le nom du client.
+**8. Que contient le fichier /var/lib/dhcp/dhcpd.leases sur le serveur, et qu’affiche la commande dhcp-lease-list?**   
+Dans /var/lib/dhcp/dhcpd.leases sur le serveur : pour chaque adresse ip attribuée, on trouve l’horaire d’attribution, l’horaire de fin de bail, l’adresse mac de la machine du client, et le nom du client.  
 La commande dhcp-lease-list permet d’afficher en tableau les infos du fichier dhcpd.leases. Chaque ligne correspond à un client.
-9.	Les ping fonctionnent !!!!!
-10.	Modification du fichier de config du serveur dhcp
 
-## Ex 4 :  
+**9. Vérifiez que les deux machines se «voient» via leur adresse IP, à l’aide de la commande ping.**  
+Les ping fonctionnent !!!!!  
 
-1.	But : donner au serveur des caractéristiques de routeur : il peut maintenant transmettre des infos entre internet et le client. Il fait interface.
-2.	But : le serveur est l’unique interface pour internet. Le client est masqué par le serveur. L’ip du client est inconnue d’internet qui ne connait que celle du serveur. 
+**10. Modifiez la configuration du serveur pour que l’interface réseau du client reçoive l’IP statique 192.168.100.20: 
+deny unknown-clients; #empêche l'attribution d'une adresse IP à une station dont l'adresse MAC est inconnue du serveur  
+host client1{  
+hardware ethernet XX:XX:XX:XX:XX:XX; #remplacer par l'adresse MAC  
+fixed-address 192.168.100.20;  
+}  
+Vérifiez que la nouvelle configuration a bien été appliquée sur le client (éventuellement, désactivez puis réactivez l’interface réseau pour forcer le renouvellement du bail DHCP, ou utilisez la commande dhclient -v).**  
+
+Modification du fichier de config du serveur dhcp
+
+
+## Exercice 4. Donner un accès à Internet au client 
+
+**A ce stade, le client est juste une machine sur notre réseau local, et n’a aucun accès à Internet. Pour remédier à cette situation, on va se servir de la machine serveur (qui, elle, a un accès à Internet via son autre carte réseau) comme d’une passerelle.**  
+
+**1. La première chose à faire est d’autoriser l’IP forwarding sur le serveur (désactivé par défaut, étant donné que la plupart des utilisateurs n’en ont pas besoin). Pour cela, il suﬀit de décommenter la ligne net.ipv4.ip_forward=1 dans le fichier /etc/sysctl.conf. Pour que les changements soient pris en compte immédiatement, il faut saisir la commande sudo sysctl -p /etc/sysctl.conf.
+Vérifiez avec la commande sysctl net.ipv4.ip_forward que la nouvelle valeur a bien été prise en compte.**  
+But : donner au serveur des caractéristiques de routeur : il peut maintenant transmettre des infos entre internet et le client. Il fait interface.  
+
+**2. Ensuite, il faut autoriser la traduction d’adresse source (masquerading) en ajoutant la règle iptables suivante : sudo iptables --table nat --append POSTROUTING --out-interface enp0s3 -j MASQUERADE  
+Vérifiez à présent que vous arrivez à «pinguer» une adresse IP (par exemple 1.1.1.1 depuis le client. A ce stade, le client a désormais accès à Internet, mais il sera difficile de surfer : par exemple, il est même impossible de pinguer www.google.com. C’est parce que nous n’avons pas encore configuré de serveur DNS pour le client.**  
+But : le serveur est l’unique interface pour internet. Le client est masqué par le serveur. L’ip du client est inconnue d’internet qui ne connait que celle du serveur.  
 
 ## Ex 5 :  
 
