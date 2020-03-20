@@ -153,19 +153,24 @@ On modifie en conséquence le fichier de config dhcpd.conf.
 On force le renouvellement de l'ip du client avec `dhclient -v`. On vérifie l'attribution de l'ip avec `ip a`.  
 
 
-## Exercice 4. Donner un accès à Internet au client 
+## Exercice 4. Donner un accès à Internet au client  
+
+Le but de cet exercice est de donné accès à internet au client à travers le serveur. Le serveur servira de routeur au client, masquant la présence du client à internet.  
 
 **A ce stade, le client est juste une machine sur notre réseau local, et n’a aucun accès à Internet. Pour remédier à cette situation, on va se servir de la machine serveur (qui, elle, a un accès à Internet via son autre carte réseau) comme d’une passerelle.**  
 
-**1. La première chose à faire est d’autoriser l’IP forwarding sur le serveur (désactivé par défaut, étant donné que la plupart des utilisateurs n’en ont pas besoin). Pour cela, il suﬀit de décommenter la ligne net.ipv4.ip_forward=1 dans le fichier /etc/sysctl.conf. Pour que les changements soient pris en compte immédiatement, il faut saisir la commande sudo sysctl -p /etc/sysctl.conf.
-Vérifiez avec la commande sysctl net.ipv4.ip_forward que la nouvelle valeur a bien été prise en compte.**  
-But : donner au serveur des caractéristiques de routeur : il peut maintenant transmettre des infos entre internet et le client. Il fait interface.  
+**1. La première chose à faire est d’autoriser l’IP forwarding sur le serveur (désactivé par défaut, étant donné que la plupart des utilisateurs n’en ont pas besoin). Pour cela, il suﬀit de décommenter la ligne net.ipv4.ip_forward=1 dans le fichier /etc/sysctl.conf. Pour que les changements soient pris en compte immédiatement, il faut saisir la commande `sudo sysctl -p /etc/sysctl.conf`.
+Vérifiez avec la commande `sysctl net.ipv4.ip_forward` que la nouvelle valeur a bien été prise en compte.**  
+But : donner au serveur des caractéristiques de routeur : il peut maintenant transmettre des infos entre internet et le client. Il fait interface en routant les paquets.  
 
-**2. Ensuite, il faut autoriser la traduction d’adresse source (masquerading) en ajoutant la règle iptables suivante : sudo iptables --table nat --append POSTROUTING --out-interface enp0s3 -j MASQUERADE  
+**2. Ensuite, il faut autoriser la traduction d’adresse source (masquerading) en ajoutant la règle iptables suivante : 
+`sudo iptables --table nat --append POSTROUTING --out-interface enp0s3 -j MASQUERADE`  
 Vérifiez à présent que vous arrivez à «pinguer» une adresse IP (par exemple 1.1.1.1 depuis le client. A ce stade, le client a désormais accès à Internet, mais il sera difficile de surfer : par exemple, il est même impossible de pinguer www.google.com. C’est parce que nous n’avons pas encore configuré de serveur DNS pour le client.**  
 But : le serveur est l’unique interface pour internet. Le client est masqué par le serveur. L’ip du client est inconnue d’internet qui ne connait que celle du serveur.  
 
-## Exercice 5. Installation du serveur DNS  
+## Exercice 5. Installation du serveur DNS
+
+Le but de cet exercice est de faire les liens entre nom de domaine et adresse ip. Ainsi on pourra pinger des noms de sites et non leur ip attribuées.  
 
 **De la même façon qu’il est plus facile de retenir le nom d’un contact plutôt que son numéro de téléphone, il est plus simple de mémoriser le nom d’un hôte sur un réseau (par exemple www.cpe.fr) plutôt que son adresse IP (178.237.111.223). 
 Dans les premiers réseaux, cette correspondance, appelée résolution de nom, se faisait via un fichier nommé hosts (présent dans /etc sous Linux1). L’inconvénient de cette méthode est que lorsqu’un nom ou une adresse IP change, il faut modifier les fichiers hosts de toutes les machines!  
@@ -173,18 +178,21 @@ Par conséquent, avec l’avénement des réseaux à grande échelle, ce systèm
 Il est aussi très commun d’utiliser un serveur DNS privé, interne à l’organisation, afin de pouvoir résoudre les noms des machines locales. Pour les requêtes extérieures, le serveur DNS privé passe alors la main à un DNS externe. Il existe de nombreux serveurs DNS, mais le plus commun sous UNIX est Bind9 (Berkeley Internet Name Daemon v.9).**  
 
 **1. Sur le serveur, commencez par installer Bind9, puis assurez-vous que le service est bien actif.**  
-sudo apt install bind9  
-vérifier activité de bind9 : systemctl status bind9.service
+`sudo apt install bind9`pour installer le DNS bind9.  
+Pour vérifier activité de bind9 : `systemctl status bind9.service`  
+
 **2. A ce stade, Bind n’est pas configuré et ne fait donc pas grand chose. L’une des manières les simples de le configurer est d’en faire un serveur cache : il ne fait rien à part mettre en cache les réponses de serveurs externes à qui il transmet la requête de résolution de nom.  
 Le binaire (= programme) installé avec le paquet bind9 ne s’appelle ni bind ni bind9 mais named...  
 Nous allons donc modifier son fichier de configuration : /etc/bind/named.conf.options. Dans ce fichier, décommentez la partie forwarders, et à la place de 0.0.0.0, renseignez les IP de DNS publics comme 1.1.1.1 et 8.8.8.8 (en terminant à chaque fois par un point virgule). Redémarrez le serveur bind9.**  
-redémarrer bind9 : sudo service bind9 restart
+redémarrer bind9 : `sudo service bind9 restart`  
+Le but de cet étape est de donné à notre DNS privé un lien vers des DNS public externes (google et cloudflare). Ce seront eux qui feront le lien entre nom de domaine et ip.  
 
 **3. Sur le client, retentez un ping sur www.google.fr. Cette fois ça devrait marcher! On valide ainsi la configuration du DHCP effectuée précédemment, puisque c’est grâce à elle que le client a trouvé son serveur DNS.**  
-ça ping!  
-lorsque je tape www.cpe.fr, cela interroge le serveur DNS que j'ai configuré. Ce serveur transmet ensuite la requête au serveur DNS de google situé à l'ip 8.8.8.8. Le serveur DNS de google fait le lien entre le nom cpe et l'adresse ip de cpe. Et ainsi je peux pinger cette ip.  
+www.google.fr. ping!  
+Lorsque l'on tape www.cpe.fr, cela interroge le serveur DNS privé bind9 que l'on a configuré. Ce serveur transmet ensuite la requête au serveur DNS de google situé à l'ip 8.8.8.8. Le serveur DNS de google fait le lien entre le nom cpe et l'adresse ip de cpe. Ainsi, on peut pinger ce site.  
 
-**4. Sur le client, installez le navigateur en mode texte lynx et essayez de surfer sur fr.wikipedia.org (bienvenue dans le passé...)**  On surfe sur Wikipedia grâce à lynx :  
+**4. Sur le client, installez le navigateur en mode texte lynx et essayez de surfer sur fr.wikipedia.org (bienvenue dans le passé...)** `sudo apt install lynx` pour installer lynx. Le téléchargement fonctionne car nous sommes maintenant relié à internet.  
+On surfe sur Wikipedia grâce à lynx :  
 Le déplacement sur lynx se déroule avec les flèches haut et bas au sein d’une page (on se déplace de lien en lien). Pour suivre un lien hypertexte, on utilise la flèche de droite, pour revenir à la page précédente on utilise la flèche de gauche.  
 
 
