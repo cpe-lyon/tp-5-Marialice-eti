@@ -68,7 +68,7 @@ Installation paquet et serveur non configuré.
 Utilisation de netplan pour mettre en place l’ip du réseau interne.  
 Netplan : il ne faut pas enlever la config de la carte 3 dans serveur :  elle sert à la connexion internet !!!!!
 
-**La configuration du serveur DHCP se fait via le fichier /etc/dhcp/dhcpd.conf. Renommez le fichier existant sous le nom dhcpd.conf.bak puis créez en un nouveau avec les informations suivantes :   
+**3. La configuration du serveur DHCP se fait via le fichier /etc/dhcp/dhcpd.conf. Renommez le fichier existant sous le nom dhcpd.conf.bak puis créez en un nouveau avec les informations suivantes :   
 default-lease-time 120;  
 max-lease-time 600;  
 authoritative; #DHCP officiel pour notre réseau  
@@ -82,13 +82,21 @@ subnet 192.168.100.0 netmask 255.255.255.0 { #configuration du sous-réseau 192.
 A quoi correspondent les deux premières lignes?   
 Les valeurs indiquées sur ces deux lignes sont faibles, afin que l’on puisse voir constituer quelques logs durant ce TP. Dans un environnement de production, elles sont beaucoup plus élevées!**  
 
-3.	Sudo mv dhcpd.conf dhcpd.conf.bak
-Le bail du serveur dhcp est le temps accordé par le serveur à l’existence d’une ip pour un client. Le client conserve l’ip attribuée pendant la durée du bail. A l’issu de celle-ci, il peut demander une extension de bail.
+sudo mv dhcpd.conf dhcpd.conf.bak
+Le bail du serveur dhcp est le temps accordé par le serveur à l’existence d’une ip pour un client. Le client conserve l’ip attribuée pendant la durée du bail. A l’issu de celle-ci, il peut demander une extension de bail.  
 
+**4. Editez le fichier /etc/default/isc-dhcp-server afin de spécifier l’interface sur laquelle le serveur doit écouter.**  
+On rajoute l’interface enp0s8 dans le fichier (c’est celle qui communique avec le client)  
 
-4.	On rajoute l’interface enp0s8 dans le fichier (c’est celle qui communique avec le client)
-5.	dhcpd -t puis  systemctl restart isc-dhcp-server
-6.	hostnamectl set-hostname client
+**5. Validez votre fichier de configuration avec la commande dhcpd -t puis redémarrez le serveur DHCP (avec la commande systemctl restart isc-dhcp-server) et vérifiez qu’il est actif.**  
+dhcpd -t puis  systemctl restart isc-dhcp-server  
+
+**6. Passons au client. Si vous avez suivi le sujet du TP1, le client a été créé en clonant la machine virtuelle du serveur. Par conséquent, son nom d’hôte est toujours serveur. Nous allons remédier à cela. Pour l’instant, vérifiez que la carte réseau du client est désactivée, puis démarrez le client.  
+Pour modifier le nom de la machine, saisissez la commande hostnamectl set-hostname client.  
+Dans les versions récentes, Ubuntu installe d’oﬀice le paquet cloud-init lors de la configuration du système. Ce paquet permet la configuration de machines via un script dans le cloud, et a parfois des effets de bord fâcheux; en particulier, il supprimera le nom qu’on vient de donner à notre VM au prochain redémarrage pour lui redonner son ancien nom. Pour éviter cela, créez le fichier /etc/cloud/cloud.cfg.d/99_hostname.cfg dans lequel vous ajouterez simplement preserve_hostname: true.**   
+
+hostnamectl set-hostname client
+
 7.	DHCPDISCOVER : requête du client pour découvrir les serveurs dhcp à dispo. S’il n’y en a pas, il s’auto-attribue une ip
 DHCPOFFER : le serveur propose une ip au client
  DHCPREQUEST : le client accepte la propo
