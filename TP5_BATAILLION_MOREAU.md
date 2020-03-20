@@ -46,12 +46,16 @@ Dans config reseau :
 - actualiser l’adresse mac de client pour qu’elle soit différente de serveur (client clone de serveur)  
 
 dans serveur :  
-`sudo ip link set enp0s8 up //activation de l’interface avec le client, ici c’est la carte 8 qui appartient au réseau interne tpadmin.local  
-sudo ip addr add 192.168.100.1/24 dev enp0s8 //attribution de l’ip du serveur`  
+```
+sudo ip link set enp0s8 up //activation de l’interface avec le client, ici c’est la carte 8 qui appartient au réseau interne tpadmin.local  
+sudo ip addr add 192.168.100.1/24 dev enp0s8 //attribution de l’ip du serveur  
+```
 
-dans client :  
-`sudo ip link set enp0s3 up //activation de l’interface avec le serveur, ici c’est la carte 3 qui appartient au réseau interne tpadmin.local  
-sudo ip addr add 192.168.100.2/24 dev enp0s3 //attribution de l’ip du client`  
+dans client :
+```
+sudo ip link set enp0s3 up //activation de l’interface avec le serveur, ici c’est la carte 3 qui appartient au réseau interne tpadmin.local  
+sudo ip addr add 192.168.100.2/24 dev enp0s3 //attribution de l’ip du client  
+```
 
 Le ping de l'ip du client ou de l'ip du serveur réussit !  
 La mise en place de ces communications est temporaire. Si l'on veut qu'à chaque allumage de VM, client et serveur puissent communiquer, il va falloir passer par un fichier netplan.  
@@ -76,13 +80,15 @@ La commande `systemctl status isc-dhcp-server` permet de se rendre compte que le
 Le serveur a accès à internet grâce à sa carte réseau NAT (la carte 3).  
 Le serveur a également accès à un réseau interne (tpadmin.local) avec le client grâce à sa carte de réseau interne (carte 8). Dans le fichier /etc/netplan, on fixe l'adresse ip du serveur de manière permanente dans le réseau interne.  
 Il faut rajouter dans le fichier netplan une attribution d'ip statique pour la carte 8:  
-`network :  
+```
+network :  
   version : 2  
    renderer : networkd  
    ethernets :  
       enp0s8 :  
           addresses :  
-              − 10.10.10.2/24`  
+              − 10.10.10.2/24  
+```
 Attention: il ne faut pas enlever la config de la carte 3 dans le netplan du serveur :  elle sert à la connexion internet !  
 
 **3. La configuration du serveur DHCP se fait via le fichier /etc/dhcp/dhcpd.conf. Renommez le fichier existant sous le nom dhcpd.conf.bak puis créez en un nouveau avec les informations suivantes :   
