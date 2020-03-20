@@ -92,6 +92,7 @@ network :
 Attention: il ne faut pas enlever la config de la carte 3 dans le netplan du serveur :  elle sert à la connexion internet !  
 
 **3. La configuration du serveur DHCP se fait via le fichier /etc/dhcp/dhcpd.conf. Renommez le fichier existant sous le nom dhcpd.conf.bak puis créez en un nouveau avec les informations suivantes :   
+```
 default-lease-time 120;  
 max-lease-time 600;  
 authoritative; #DHCP officiel pour notre réseau  
@@ -102,10 +103,11 @@ subnet 192.168.100.0 netmask 255.255.255.0 { #configuration du sous-réseau 192.
   option routers 192.168.100.1; #le serveur sert de passerelle par défaut  
   option domain-name-servers 192.168.100.1; #le serveur sert aussi de serveur DNS  
 }  
+```
 A quoi correspondent les deux premières lignes?  
 Les valeurs indiquées sur ces deux lignes sont faibles, afin que l’on puisse voir constituer quelques logs durant ce TP. Dans un environnement de production, elles sont beaucoup plus élevées!**  
 
-sudo mv dhcpd.conf dhcpd.conf.bak
+`sudo mv dhcpd.conf dhcpd.conf.bak`
 Le bail du serveur dhcp est le temps accordé par le serveur à l’existence d’une ip pour un client. Le client conserve l’ip attribuée pendant la durée du bail. A l’issu de celle-ci, il peut demander une extension de bail.  
 
 **4. Editez le fichier /etc/default/isc-dhcp-server afin de spécifier l’interface sur laquelle le serveur doit écouter.**  
