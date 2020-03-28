@@ -209,6 +209,26 @@ zone "tpadmin.local" {
 ```
 
 **2. Créez une copie appelée db.tpadmin.local du fichier db.local. Ce fichier est un fichier configuration typique de DNS, constitué d’enregistrements DNS (cf.cours). Commencez par remplacer localhost par tpadmin.local, et l’adresse 127.0.0.1 par l’adresse IP du serveur. 1. On le trouve aussi sous Windows, dans C:\Windows\System32\drivers\etc**  
+```
+;
+; BIND data file for local loopback interface
+;
+$TTL	604800
+@	IN	SOA	tpadmin.local. root.tpadmin.local. (
+			      2		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			 604800 )	; Negative Cache TTL
+;
+@	IN	NS	tpadmin.local.
+serveur.tpadmin.local.	IN	A	192.168.100.1
+client.tpadmin.local.	IN	A	192.168.100.20
+@	IN	AAAA	::1
+```
+
+NS signifie name server et IN internet. `@	IN	NS	tpadmin.local.` indique que le serveur DNS utilisé par la machine a pour nom tpadmin.local.  
+Les deux lignes suivantes permettent de faire le lien entre les noms des machines et leur adresse IP.  
 
 **La ligne root.tpadmin.local. indique en fait une adresse mail du responsable technique de cette zone, où le symbole @ est remplacé par un point. Attention également à ne pas oublier le point final, qui représente la racine DNS; on ne le met pas dans les navigateurs, mais il est indispensable dans les fichiers de configuration DNS!  
 Le champ serial doit être incrémenté à chaque modification du fichier. Généralement, on lui donne pour valeur la date suivie d’un numéro sur deux chiffres, par exemple 2019031401.**  
@@ -222,6 +242,25 @@ file "/etc/bind/db.192.168.100";
 };  
 ```
 **Créez ensuite le fichier db.192.168.100 à partir du fichier db.127, et modifiez le de la même manière que le fichier de zone. Sur la dernière ligne, faites correspondre l’adresse IP avec celle du serveur (Attention, il y a un petit piège!).**  
+```
+;
+; BIND reverse data file for local loopback interface
+;
+$TTL	604800
+@	IN	SOA	tpadmin.local. root.tpadmin.local. (
+			      1		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			 604800 )	; Negative Cache TTL
+;
+@	IN	NS	tpadmin.local.
+1	IN	PTR	serveur.tpadmin.local.
+20	IN	PTR	client.tpadmin.local.
+```
+Ici, on n'a pas besoin de préciser les adresses client et serveur en entier. En effet, elles font parties du réseaux 192.168.100, il ne manque que le dernier octet d'adresse. C'est lui qu'on indique.  
+Les fichiers en reverse permettent de faire le lien ip => nom de domaine.  
+Les fichiers en direct permettent de faire le lien nom de domaine => ip.  
 
 **4. Utilisez les utilitaires named-checkconf et named-checkzone pour valider vos fichiers de configuration:**  
 ```
@@ -229,9 +268,13 @@ $ named-checkconf named.conf.local
 $ named-checkzone tpadmin.local /etc/bind/db.tpadmin.local 
 $ named-checkzone 100.168.192.in-addr.arpa /etc/bind/db.192.168.100 
 ```
+Il faut également modifier le fichier /etc/resolv.conf : et associer à nameserver l'adressse 127.0.0.1. Cette adresse est l'adresse de loopback de la machine, elle représente la machine locale c'est à dire serveur (192.168.100.1). Le serveur sera donc coupé d'internet et en boucle fermée sur lui-même.  
 
 **5. Redémarrer le serveur Bind9. Vous devriez maintenant être en mesure de ”pinguer” les différentes machines du réseau.**
-
+redémarrer bind9 : `sudo service bind9 restart`.  
+Pour vérifier que la machine est bien connectée au serveur DNS 192.168.100.1:  faire `resolvectl status`.  
+Pour vérifier les liens ip/nom de domaine : faire `host 192.168.100.20`ou `host serveur.tpadmin.local`.  
+Pour ping les machine avec les noms : faire `ping serveur.tpadmin.local`
 
 
 
